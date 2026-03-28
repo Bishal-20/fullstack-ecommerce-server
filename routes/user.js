@@ -70,22 +70,27 @@ router.post("/send-otp", async (req, res) => {
       expires: Date.now() + 5 * 60 * 1000,
     };
 
-    console.log("START OTP");
-    await resend.emails.send({
+console.log("START OTP");
+
+try {
+  const response = await Promise.race([
+    resend.emails.send({
       from: "onboarding@resend.dev",
       to: email,
       subject: "Email Verification OTP",
       html: `<p>Your OTP is <b>${otp}</b>. It will expire in 5 minutes.</p>`,
-    });
+    }),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Resend timeout")), 5000)
+    ),
+  ]);
 
-    res.status(200).json({
-      success: true,
-      msg: "OTP sent to email",
-    });
-  } catch (error) {
-    console.error("🔥 BACKEND ERROR:", error);
-    res.status(500).json({ msg: error.message });
-  }
+  console.log("✅ EMAIL SENT:", response);
+
+} catch (err) {
+  console.error("❌ EMAIL FAILED:", err);
+  return res.status(500).json({ msg: err.message });
+}
 });
 
 router.post("/signup", async (req, res) => {
