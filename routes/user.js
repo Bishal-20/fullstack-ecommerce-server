@@ -9,6 +9,7 @@ const user = require("../models/user");
 const cloudinary = require("cloudinary").v2;
 const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
+console.log("RESEND KEY:", process.env.RESEND_API_KEY);
 const nodemailer = require("nodemailer");
 const otpStore = {};
 const passwordResetOtpStore = {};
