@@ -69,7 +69,7 @@ router.post("/send-otp", async (req, res) => {
     const response = await Promise.race([
       resend.emails.send({
         from: "onboarding@resend.dev",
-        to: email,
+        to: "bikikaishyap@gmail.com",
         subject: "Email Verification OTP",
         html: `<p>Your OTP is <b>${otp}</b>. It will expire in 5 minutes.</p>`,
       }),
