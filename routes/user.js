@@ -71,7 +71,7 @@ router.post("/send-otp", async (req, res) => {
 
     console.log("START OTP");
     await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "Bazzar Buddy <onboarding@resend.dev>",
       to: email,
       subject: "Email Verification OTP",
       html: `<p>Your OTP is <b>${otp}</b>. It will expire in 5 minutes.</p>`,
