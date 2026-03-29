@@ -60,7 +60,6 @@ const authMiddleware = (req, res, next) => {
 };
 
 router.post("/send-otp", async (req, res) => {
-  console.log("SEND OTP BODY:", req.body);
   const { email } = req.body;
 
   try {
@@ -72,33 +71,33 @@ router.post("/send-otp", async (req, res) => {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    console.log("START OTP");
-
-    const response = await Promise.race([
-      resend.emails.send({
-        from: "Bazzar Buddy <onboarding@resend.dev>",
-        to: email,
-        subject: "Email Verification OTP",
-        html: `<p>Your OTP is <b>${otp}</b>. It will expire in 5 minutes.</p>`,
-      }),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Resend timeout")), 5000)
-      ),
-    ]);
-
-    console.log("EMAIL SENT:", response);
-
+    // store OTP FIRST
     otpStore[email] = {
       otp,
       expires: Date.now() + 5 * 60 * 1000,
     };
-    res.status(200).json({
+
+    try {
+      await transporter.sendMail({
+        from: `"Bazzar Buddy" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: "Email Verification OTP",
+        text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
+      });
+
+      console.log("EMAIL SENT");
+    } catch (err) {
+      console.log("EMAIL FAILED:", err.message);
+    }
+
+    return res.status(200).json({
       success: true,
-      msg: "OTP sent to email",
+      msg: "OTP generated",
+      devOtp: otp, // fallback for your friends
     });
 
   } catch (error) {
-    console.error("EMAIL FAILED:", error);
+    console.error("ERROR:", error);
     res.status(500).json({ msg: error.message });
   }
 });
