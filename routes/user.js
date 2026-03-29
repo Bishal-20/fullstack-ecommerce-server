@@ -9,6 +9,7 @@ const user = require("../models/user");
 const cloudinary = require("cloudinary").v2;
 const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
+console.log("RESEND KEY:", process.env.RESEND_API_KEY);
 const nodemailer = require("nodemailer");
 const otpStore = {};
 const passwordResetOtpStore = {};
@@ -20,6 +21,15 @@ cloudinary.config({
   secure: true,
 });
 
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS, // APP PASSWORD (not normal password)
+  },
+});
 
 
 const storage = multer.diskStorage({
@@ -52,7 +62,6 @@ const authMiddleware = (req, res, next) => {
 
 router.post("/send-otp", async (req, res) => {
   console.log("SEND OTP BODY:", req.body);
-  console.log("EMAIL USER:", process.env.EMAIL_USER);
   const { email } = req.body;
 
   try {
@@ -64,25 +73,33 @@ router.post("/send-otp", async (req, res) => {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+    console.log("START OTP");
+
+    const response = await Promise.race([
+      resend.emails.send({
+        from: "Bazzar Buddy <onboarding@resend.dev>",
+        to: email,
+        subject: "Email Verification OTP",
+        html: `<p>Your OTP is <b>${otp}</b>. It will expire in 5 minutes.</p>`,
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Resend timeout")), 5000)
+      ),
+    ]);
+
+    console.log("EMAIL SENT:", response);
+
     otpStore[email] = {
       otp,
       expires: Date.now() + 5 * 60 * 1000,
     };
-
-    console.log("START OTP");
-    await resend.emails.send({
-      from: "Bazzar Buddy <onboarding@resend.dev>",
-      to: email,
-      subject: "Email Verification OTP",
-      html: `<p>Your OTP is <b>${otp}</b>. It will expire in 5 minutes.</p>`,
-    });
-
     res.status(200).json({
       success: true,
       msg: "OTP sent to email",
     });
+
   } catch (error) {
-    console.error("🔥 BACKEND ERROR:", error);
+    console.error("EMAIL FAILED:", error);
     res.status(500).json({ msg: error.message });
   }
 });
