@@ -21,7 +21,6 @@ cloudinary.config({
   secure: true,
 });
 
-const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
