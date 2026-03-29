@@ -9,6 +9,7 @@ const authJwt = require('./helper/jwt.js');
 app.use(cors({
   origin: [
     "https://bazzar-buddy-client.onrender.com",
+    "https://startling-biscotti-c12487.netlify.app",
     "https://bazzar-buddy-admin.onrender.com",
     "http://localhost:3000"
   ],
