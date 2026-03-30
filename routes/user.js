@@ -90,8 +90,6 @@ router.post("/send-otp", async (req, res) => {
         subject: "Email Verification OTP",
         textContent: `Your OTP is ${otp}. It will expire in 5 minutes.`,
       });
-
-      console.log("EMAIL SENT via Brevo");
     } catch (err) {
       console.log("BREVO FAILED:", err.message);
     }
@@ -99,7 +97,6 @@ router.post("/send-otp", async (req, res) => {
     return res.status(200).json({
       success: true,
       msg: "OTP generated",
-      devOtp: otp,
     });
   } catch (error) {
     console.error("ERROR:", error);
