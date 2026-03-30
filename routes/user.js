@@ -8,9 +8,16 @@ const fs = require("fs");
 const user = require("../models/user");
 const cloudinary = require("cloudinary").v2;
 const { Resend } = require("resend");
-const resend = new Resend(process.env.RESEND_API_KEY);
-console.log("RESEND KEY:", process.env.RESEND_API_KEY);
-const nodemailer = require("nodemailer");
+// const resend = new Resend(process.env.RESEND_API_KEY);
+// console.log("RESEND KEY:", process.env.RESEND_API_KEY);
+const SibApiV3Sdk = require("sib-api-v3-sdk");
+
+const client = SibApiV3Sdk.ApiClient.instance;
+const apiKey = client.authentications["api-key"];
+apiKey.apiKey = process.env.BREVO_API_KEY;
+
+const emailApi = new SibApiV3Sdk.TransactionalEmailsApi();
+// const nodemailer = require("nodemailer");
 const otpStore = {};
 const passwordResetOtpStore = {};
 
@@ -21,15 +28,13 @@ cloudinary.config({
   secure: true,
 });
 
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // APP PASSWORD (not normal password)
-  },
-});
-
+// const transporter = nodemailer.createTransport({
+//   service: "gmail",
+//   auth: {
+//     user: process.env.EMAIL_USER,
+//     pass: process.env.EMAIL_PASS, // APP PASSWORD (not normal password)
+//   },
+// });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -64,38 +69,38 @@ router.post("/send-otp", async (req, res) => {
 
   try {
     const existingUser = await User.findOne({ email });
-
     if (existingUser) {
       return res.status(400).json({ msg: "Email already registered" });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // store OTP FIRST
     otpStore[email] = {
       otp,
       expires: Date.now() + 5 * 60 * 1000,
     };
 
     try {
-      await transporter.sendMail({
-        from: `"Bazzar Buddy" <${process.env.EMAIL_USER}>`,
-        to: email,
+      await emailApi.sendTransacEmail({
+        sender: {
+          email: process.env.EMAIL_USER,
+          name: "Bazzar Buddy",
+        },
+        to: [{ email }],
         subject: "Email Verification OTP",
-        text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
+        textContent: `Your OTP is ${otp}. It will expire in 5 minutes.`,
       });
 
-      console.log("EMAIL SENT");
+      console.log("EMAIL SENT via Brevo");
     } catch (err) {
-      console.log("EMAIL FAILED:", err.message);
+      console.log("BREVO FAILED:", err.message);
     }
 
     return res.status(200).json({
       success: true,
       msg: "OTP generated",
-      devOtp: otp, // fallback for your friends
+      devOtp: otp,
     });
-
   } catch (error) {
     console.error("ERROR:", error);
     res.status(500).json({ msg: error.message });
@@ -399,11 +404,14 @@ router.post("/forgot-password/send-otp", async (req, res) => {
       expires: Date.now() + 5 * 60 * 1000, // 5 minutes
     };
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
+    await emailApi.sendTransacEmail({
+      sender: {
+        email: process.env.EMAIL_USER,
+        name: "Bazzar Buddy",
+      },
+      to: [{ email }],
       subject: "Password Reset OTP",
-      text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
+      textContent: `Your OTP is ${otp}. It will expire in 5 minutes.`,
     });
 
     res.status(200).json({ success: true, msg: "OTP sent to email" });
