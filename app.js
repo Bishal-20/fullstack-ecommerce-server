@@ -8,7 +8,7 @@ require('dotenv').config();
 const authJwt = require('./helper/jwt.js');
 app.use(cors({
   origin: [
-    "https://bazzarbuddyadmin.netlify.app",
+    "https://6a0300ffbce4cca6418ecded--bazzar-buddyadmin.netlify.app",
     "https://bazzarbuddystore.netlify.app",
     "http://localhost:3000"
   ],
