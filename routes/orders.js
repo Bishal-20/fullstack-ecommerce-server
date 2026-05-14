@@ -65,6 +65,27 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/admin/all-orders", async (req, res) => {
+  try {
+
+    const orders = await Order.find()
+      .sort({ date: -1 });
+
+    res.json({
+      success: true,
+      orders
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      msg: error.message
+    });
+
+  }
+});
+
 
 
 // GET SINGLE ORDER (USER CAN ONLY ACCESS THEIR OWN)
