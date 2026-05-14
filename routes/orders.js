@@ -92,10 +92,7 @@ router.get("/admin/all-orders", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
 
-    const order = await Order.findOne({
-      _id: req.params.id,
-      userId: req.auth.id
-    });
+    const order = await Order.findById(req.params.id);
 
     if (!order) {
       return res.status(404).json({
